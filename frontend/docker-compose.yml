@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - streamscale
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  # Note: Add your backend service configuration here
+  # backend:
+  #   image: streamscale-backend:latest
+  #   ports:
+  #     - "8000:8000"
+  #   networks:
+  #     - streamscale
+
+networks:
+  streamscale:
+    driver: bridge
