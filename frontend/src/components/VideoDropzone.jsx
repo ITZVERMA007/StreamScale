@@ -119,7 +119,7 @@ export default function VideoDropzone({ onFileSelect, disabled = false }) {
 
               <div className="mt-8 pt-8 border-t border-dark-border">
                 <p className="text-sm text-gray-500 mb-2">
-                  Supported formats: <span className="text-gray-400 font-mono">MP4, MKV, MOV, WEBM</span>
+                  Supported formats: <span className="text-gray-400 font-mono">MP4, MKV, MOV</span>
                 </p>
                 <p className="text-sm text-gray-500">
                   Maximum file size: <span className="text-gray-400 font-mono">{formatFileSize(MAX_FILE_SIZE)}</span>

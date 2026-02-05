@@ -58,8 +58,8 @@ export const cancelTask = async (taskId) => {
   await api.post(`/tasks/${taskId}/cancel`);
 };
 
-export const getResults = async (taskId) => {
-  const response = await api.get(`/tasks/${taskId}/results`);
+export const getDownloadUrl = async (taskId) => {
+  const response = await api.get(`/tasks/${taskId}/download`);
   return response.data;
 };
 export default api;

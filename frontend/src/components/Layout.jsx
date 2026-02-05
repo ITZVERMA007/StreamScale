@@ -58,10 +58,10 @@ export default function Layout({ children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-500">
-              © 2024 StreamScale. Built with FastAPI, Celery & FFmpeg.
+              © 2026 StreamScale.
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>No Authentication • Task-Based</span>
+              <span>No Authentication </span>
               <span>•</span>
               <span>Anonymous Processing</span>
             </div>
