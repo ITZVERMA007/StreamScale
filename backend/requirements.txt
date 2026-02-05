@@ -1,2 +1,4 @@
 fastapi[standard]
 uvicorn[standard]
+celery[redis]
+redis
