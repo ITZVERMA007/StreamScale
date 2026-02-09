@@ -1,11 +1,13 @@
-from fastapi import APIRouter, UploadFile, File,HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from app.core.job_store import create_job
+from app.services.queue_service import enqueue_transcode_task
 import uuid
 import os
-from app.core.job_store import create_job
+
 
 router = APIRouter()
 
-upload_dir = "app/uploads"
+upload_dir = "/data/uploads"
 allowed_extensions = {".mp4",".mkv",".mov"}
 
 @router.post("/upload")
@@ -32,9 +34,12 @@ async def upload_file(file:UploadFile = File(...)):
     #creatig a job entry in the job_store
     create_job(task_id,file.filename)   
 
+    #enqueueing the transcoding task to the worker
+    enqueue_transcode_task(task_id,file_location)
+
     # returning the task id to the user
     return{
         "task_id":task_id,
-        "status":"File uploaded successfully",
+        "status":"queued",
         "filename":file.filename
     }
