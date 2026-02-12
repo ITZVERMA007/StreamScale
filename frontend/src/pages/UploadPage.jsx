@@ -22,7 +22,10 @@ export default function UploadPage() {
   };
 
   const handleUpload = async () => {
+    console.log("DATA TYPE CHECK:", selectedFile); 
+    console.log("Is it an array?", Array.isArray(selectedFile));
     if (!selectedFile) return;
+    
 
     setIsUploading(true);
     setUploadProgress(0);

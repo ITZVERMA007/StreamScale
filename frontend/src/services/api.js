@@ -9,7 +9,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    if (!config.data instanceof FormData){
     config.headers["Content-Type"] = "application/json";
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -24,7 +26,7 @@ api.interceptors.response.use(
         data: error.response.data,
       });
     } else {
-      console.error("Network Error:", error.message);
+      console.error("Network Error:", error.response?.data?.detail);
     }
     return Promise.reject(error);
   }
@@ -35,8 +37,8 @@ export const uploadVideo = async (file, onProgress) => {
   formData.append('file', file);
 
   const response = await api.post('/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
+    headers:{
+      'Content-Type':'multipart/form-data',
     },
     onUploadProgress: (progressEvent) => {
       if (progressEvent.total && onProgress) {
