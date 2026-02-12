@@ -12,7 +12,7 @@ allowed_extensions = {".mp4",".mkv",".mov"}
 
 @router.post("/upload")
 async def upload_file(file:UploadFile = File(...)):
-
+    print("Received file:", file.filename)
     # Basic validation for file is being done at this step
     if not file.filename:
         raise HTTPException(status_code=400,detail="No file uploaded")
@@ -22,7 +22,6 @@ async def upload_file(file:UploadFile = File(...)):
     
     # task id for the transcoding task is being generated over here
     task_id = str(uuid.uuid4())
-
 
     #saving the file locally 
     os.makedirs(upload_dir,exist_ok=True)
