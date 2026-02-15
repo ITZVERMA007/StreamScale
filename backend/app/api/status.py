@@ -12,7 +12,7 @@ def get_status(task_id:str):
         raise HTTPException(status_code=404,detail="Task not found")
     
     return{
-        "task_id":job[task_id],
+        "task_id":job["task_id"],
         "state":job["status"],
         "progress":job["progress"]
     }
