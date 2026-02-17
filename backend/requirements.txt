@@ -2,3 +2,4 @@ fastapi[standard]
 uvicorn[standard]
 celery[redis]
 redis
+ffmpeg-python
