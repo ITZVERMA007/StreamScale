@@ -67,7 +67,7 @@ def transcode_video(self, job_id: str, file_path: str):
                 "ffmpeg", 
                 "-y",                 
                 "-i", file_path,          
-                "-vf", "scale={res_scale    }",  
+                "-vf", f"scale={res_scale}",  
                 "-c:a", "copy",           
                 "-progress", "pipe:1",   
                 output_path               
@@ -120,10 +120,10 @@ def transcode_video(self, job_id: str, file_path: str):
 
     except subprocess.CalledProcessError as e:
         logger.error(f"FFmpeg failed with exit code {e.returncode}")
-        self.update_state(state='FAILURE', meta={'error': "FFmpeg conversion failed."})
+        # self.update_state(state='FAILURE', meta={'error': "FFmpeg conversion failed."})
         raise e  
 
     except Exception as e:
         logger.error(f"Unexpected error in task: {str(e)}")
-        self.update_state(state='FAILURE', meta={'error': str(e)})
+        # self.update_state(state='FAILURE', meta={'error': str(e)})
         raise e
