@@ -51,9 +51,10 @@ def transcode_video(self, job_id: str, file_path: str):
             logger.warning("Could not determine the video duration. Progress bar might be inaccurate.")
             total_duration = 1 
 
-        progress_tracker = {res:0 for res in RESOLUTIONS.keys()}
-        progress_tracker["status"] = "STARTING"
-        self.update_state(state="PROGRESS",meta=progress_tracker)
+        progress_tracker = {res:{"progress":0,"status":"QUEUED","error":None} 
+                            for res in RESOLUTIONS.keys()
+                            }
+        self.update_state(state="PROGRESS",meta={"tasks":progress_tracker})
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         
@@ -73,57 +74,68 @@ def transcode_video(self, job_id: str, file_path: str):
                 output_path               
             ]
 
-            logger.info(f"Running FFmpeg command: {' '.join(cmd)}")
-
+            logger.info(f"Running FFmpeg command for {res_name}: {' '.join(cmd)}")
+            try:
             # Start the process without blocking using Popen
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, 
-                universal_newlines=True   
-            )
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, 
+                    universal_newlines=True   
+                )
 
-            # Progress calculation
-            for line in process.stdout:
-                match = re.search(r"out_time_ms=(\d+)", line)
+                last_percent = -1
+                # Progress calculation
+                for line in process.stdout:
+                    match = re.search(r"out_time_ms=(\d+)", line)
+                    
+                    if match:
+                        current_ms = int(match.group(1))
+                        current_seconds = current_ms / 1000000.0
+                        percent = int((current_seconds / total_duration) * 100)
+                        percent = max(0, min(100, percent))
+
+                        if percent!=last_percent:
+                            progress_tracker[res_name]["progress"] = percent
+                            self.update_state(
+                                state='PROGRESS',
+                            meta={"tasks":progress_tracker}
+                            )
+                            last_percent = percent
+
+                process.wait()
+
+                if process.returncode != 0:
+                    raise subprocess.CalledProcessError(process.returncode, cmd)
                 
-                if match:
-                    current_ms = int(match.group(1))
-                    current_seconds = current_ms / 1000000.0
-                    
-                    percent = int((current_seconds / total_duration) * 100)
-                    
-                    percent = max(0, min(100, percent))
+                progress_tracker[res_name]["status"] = "COMPLETED"
+                progress_tracker[res_name]["progress"] = 100
 
-                    progress_tracker[res_name] = percent
-                    progress_tracker["status"] = f"Transcoding {res_name}p..."
+            except Exception as e:
+                logger.error(f"Failed processing {res_name}:{e}")
+                progress_tracker[res_name]["status"] = "FAILED"
+                progress_tracker[res_name]["error"] = str(e)
+            
+            self.update_state(state="PROGRESS",meta={"tasks":progress_tracker})
+        failed_tasks = [res for res,data in progress_tracker.items() if data["status"] == "FAILED"]
 
-                    self.update_state(
-                        state='PROGRESS',
-                        meta=progress_tracker
-                        
-                    )
+        if len(failed_tasks) == len(RESOLUTIONS):
+            logger.error(f"Job {job_id} completely failed.")
+            self.update_state(state="FAILURE",meta={"error":"All resolutions failed to process.","tasks":progress_tracker})
+            raise Exception("All resolutions failed")
+        final_status = "PARTIAL_SUCCESS" if failed_tasks else "COMPLETED"
+        logger.info(f"Job {job_id} finished with status: {final_status}")
 
-            process.wait()
-
-            if process.returncode != 0:
-                raise subprocess.CalledProcessError(process.returncode, cmd)
-
-        logger.info(f"Job {job_id} Completed Successfully. Saved to {output_path}")
-        
         return {
-            "status": "Completed",
+            "status":final_status,
             "job_id": job_id,
-            "output_path": list(RESOLUTIONS.keys()),
-            "progress": 100
+            "tasks":progress_tracker
         }
 
     except subprocess.CalledProcessError as e:
         logger.error(f"FFmpeg failed with exit code {e.returncode}")
-        # self.update_state(state='FAILURE', meta={'error': "FFmpeg conversion failed."})
         raise e  
 
     except Exception as e:
         logger.error(f"Unexpected error in task: {str(e)}")
-        # self.update_state(state='FAILURE', meta={'error': str(e)})
         raise e

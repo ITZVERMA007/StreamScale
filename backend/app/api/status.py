@@ -24,39 +24,41 @@ def get_status(task_id:str):
 
         if result.state == "PROGRESS":
             progress_data = result.info if isinstance(result.info,dict) else {}
+            tasks = progress_data.get("tasks",{})
 
             # Gets the percent complete for the keys present in the RESOLUTIONS which are the original resolutions
-            active_progress_values = [ progress_data.get(res,0) for res in RESOLUTIONS.keys()]
+            active_progress_values = [ data.get("progress",0) for data in tasks.values()]
+            overall_progress = sum(active_progress_values)/ len(active_progress_values) if active_progress_values else 0
 
-            if active_progress_values:
-                overall_progress = sum(active_progress_values)/len(active_progress_values)
-            else:
-                overall_progress = 0
-            return {
-                "task_id": task_id,
-                "state": "Processing",
-                "overall_progress": int(overall_progress),
-                "details": progress_data
+            return{
+                "task_id":task_id,
+                "state":"Processing",
+                "overall_progress":int(overall_progress),
+                "details":tasks
             }
 
         elif result.state == "SUCCESS":
-            current_state = "Completed"
-            current_progress = 100
+            result_data = result.info if isinstance(result.info,dict) else {}
+            final_status = result_data.get("status","COMPLETED")
+            tasks = result_data.get("tasks",{})
 
-            downloads = {res: f"/tasks/{task_id}/download/{res}" for res in RESOLUTIONS.keys()}
+            downloads = {res: f"/tasks/{task_id}/download/{res}" for res,data in tasks.items() if data.get("status") == "COMPLETED" }
             return {
                 "task_id":task_id,
-                "state":current_state,
-                "progress":current_progress,
+                "state":final_status,
+                "overall_progress":100,
                 "download_urls":downloads,
+                "details":tasks
             }
         elif result.state == "FAILURE":
+            progress_data = result.info if isinstance(result.info,dict) else {}
             return {
-                "task_id": task_id, 
-                "state": "Failed",
-                "progress":0,
-                "error": str(result.info)
-                }
+                "task_id":task_id,
+                "state":"Failed",
+                "overall_progress":0,
+                "error":progress_data.get("error","Error occured"),
+                "details":progress_data.get("tasks",{})
+            }
     except (ValueError,TypeError,KeyError) as e:
         logger.error(f"Corrupted task data for {task_id}:{e}")
         return {
@@ -73,6 +75,6 @@ def get_status(task_id:str):
     return {
         "task_id": task_id,
         "state": current_state,
-        "progress": current_progress
+        "overall_progress": 0
     }
     
