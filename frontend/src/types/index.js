@@ -4,8 +4,8 @@ export const JOB_STATES = {
   STARTED: 'STARTED',
   PROGRESS: 'PROGRESS',
   SUCCESS: 'SUCCESS',
-  FAILURE: 'FAILURE',
-  RETRY: 'RETRY'
+  PARTIAL_SUCCESS: 'PARTAL_SUCCESS',
+  FAILED: 'FAILED',
 };
 
 // Available resolutions
@@ -16,6 +16,6 @@ export const RESOLUTIONS = [
 ];
 
 // File validation constants
-export const ALLOWED_FILE_TYPES = ['video/mp4', 'video/x-matroska', 'video/quicktime', 'video/webm'];
-export const ALLOWED_EXTENSIONS = ['.mp4', '.mkv', '.mov', '.webm'];
+export const ALLOWED_FILE_TYPES = ['video/mp4', 'video/x-matroska', 'video/quicktime'];
+export const ALLOWED_EXTENSIONS = ['.mp4', '.mkv', '.mov'];
 export const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB

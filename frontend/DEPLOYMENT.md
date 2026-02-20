@@ -264,8 +264,6 @@ Use WebP format and lazy loading:
 
 ### 3. Code Splitting
 
-Already configured in Vite, but you can manually split routes:
-
 ```typescript
 import { lazy, Suspense } from 'react';
 
@@ -368,5 +366,3 @@ For issues:
 4. Verify backend connectivity
 
 ---
-
-Happy Deploying! 🎉

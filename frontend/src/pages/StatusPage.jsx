@@ -122,6 +122,20 @@ export default function StatusPage() {
       label: 'Success',
       description: 'Transcoding completed successfully'
     },
+    COMPLETED: { 
+      icon: CheckCircle, 
+      color: 'text-accent-success',
+      bg: 'bg-accent-success/10', 
+      label: 'Success', 
+      description: 'Transcoding completed successfully' 
+    },
+    PARTIAL_SUCCESS: { 
+      icon: AlertCircle,
+      color: 'text-accent-warning', 
+      bg: 'bg-accent-warning/10', 
+      label: 'Partial Success', 
+      description: 'Some resolutions failed, but others are ready' 
+    },
     FAILURE: { 
       icon: XCircle, 
       color: 'text-accent-error', 
@@ -129,161 +143,91 @@ export default function StatusPage() {
       label: 'Failed',
       description: 'Transcoding encountered an error'
     },
-    RETRY: { 
-      icon: RefreshCw, 
-      color: 'text-accent-warning', 
-      bg: 'bg-accent-warning/10',
-      label: 'Retrying',
-      description: 'Attempting to process again'
-    },
   };
 
-  const config = stateConfig[status?.state || 'PENDING'];
+  const currentState = status?.state?.toUpperCase() || "PENDING";
+  const config = stateConfig[currentState] || stateConfig.PENDING;
   const Icon = config.icon;
 
+  const hasCompletedTasks = status?.details && Object.values(status.details).some(t => t.status === "COMPLETED");
+  const isFinished = currentState === "SUCCESS" || currentState === 'COMPLETED'|| currentState === "PARTIAL_SUCCESS";
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
-      >
-        <h1 className="text-4xl font-bold text-white mb-4 font-display">
-          Processing Status
-        </h1>
-        <p className="text-gray-400">
-          Track your video transcoding progress in real-time
-        </p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-white mb-4 font-display">Processing Status</h1>
+        <p className="text-gray-400">Track your video transcoding progress in real-time</p>
       </motion.div>
 
       {/* Status Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-dark-card border border-dark-border rounded-2xl overflow-hidden"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-dark-card border border-dark-border rounded-2xl overflow-hidden">
         {/* Task ID Header */}
-        <div className="border-b border-dark-border p-6 bg-dark-bg/50">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Task ID</p>
-              <code className="text-sm font-mono text-accent-primary">
-                {taskId}
-              </code>
-            </div>
-            <button
-              onClick={handleRetry}
-              className="p-2 hover:bg-dark-hover rounded-lg transition-colors text-gray-400 hover:text-white"
-              title="Refresh status"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+        <div className="border-b border-dark-border p-6 bg-dark-bg/50 flex justify-between">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Task ID</p>
+            <code className="text-sm font-mono text-accent-primary">{taskId}</code>
           </div>
         </div>
 
         {/* Status Content */}
         <div className="p-8">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={status?.state}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="text-center mb-8"
-            >
+            <motion.div key={status?.state} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="text-center mb-8">
               <div className={`w-20 h-20 ${config.bg} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
                 <Icon className={`w-10 h-10 ${config.color}`} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {config.label}
-              </h2>
-              <p className="text-gray-400">
-                {status?.message || config.description}
-              </p>
+              <h2 className="text-2xl font-bold text-white mb-2">{config.label}</h2>
+              <p className="text-gray-400">{status?.error || config.description}</p>
             </motion.div>
           </AnimatePresence>
 
-          {/* Progress Bar */}
-          {status && (status.state === 'PROGRESS' || status.state === 'STARTED') && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <ProgressBar 
-                progress={status.progress || 0}
-                label={status.stage || 'Processing'}
-              />
+          {/* OVERALL Progress Bar */}
+          {status && (status.state === 'PROCESSING' || status.state === 'STARTED') && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+              <ProgressBar progress={status.overall_progress || 0} label="Overall Progress" />
             </motion.div>
           )}
 
-          {/* Current Stage */}
-          {status?.stage && (
-            <div className="mb-6 p-4 bg-dark-bg/50 rounded-lg border border-dark-border">
-              <p className="text-sm text-gray-500 mb-1">Current Stage</p>
-              <p className="text-white font-medium">{status.stage}</p>
+          {/* INDIVIDUAL Task Breakdown */}
+          {status?.details && (
+            <div className="mb-8 grid gap-4">
+              {Object.entries(status.details).map(([res, info]) => (
+                <div key={res} className="p-4 bg-dark-bg/50 rounded-lg border border-dark-border">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-mono text-sm text-white">{res}p</span>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                      info.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400' :
+                      info.status === 'FAILED' ? 'bg-red-500/10 text-red-400' :
+                      info.status === 'RUNNING' ? 'bg-blue-500/10 text-blue-400' :
+                      'bg-gray-500/10 text-gray-400'
+                    }`}>
+                      {info.status}
+                    </span>
+                  </div>
+                  {(info.status === 'RUNNING' || info.status === 'QUEUED') && (
+                    <ProgressBar progress={info.progress} showPercentage={true} />
+                  )}
+                  {info.error && <p className="text-xs text-red-400 mt-2 line-clamp-1">{info.error}</p>}
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Error Message */}
-          {status?.error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-accent-error/10 border border-accent-error/20 rounded-lg"
-            >
-              <p className="text-sm text-accent-error">{status.error}</p>
-            </motion.div>
-          )}
-
           {/* Actions */}
-          <div className="flex gap-3">
-            {status?.state === 'SUCCESS' && (
-              <button
-                onClick={handleViewResults}
-                className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-accent-primary to-accent-secondary hover:shadow-lg hover:shadow-accent-primary/25 text-white rounded-xl font-semibold transition-all"
-              >
-                View Results
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <div className="flex gap-3 mt-8">
+            {(isFinished || hasCompletedTasks) && (
+              <button onClick={handleViewResults} className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-accent-primary to-accent-secondary hover:shadow-lg text-white rounded-xl font-semibold transition-all">
+                View Results <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             )}
 
-            {status?.state === 'FAILURE' && (
-              <button
-                onClick={() => navigate('/')}
-                className="flex-1 px-6 py-4 bg-accent-primary hover:bg-accent-primary/90 text-white rounded-xl font-semibold transition-colors"
-              >
+            {(status?.state === 'FAILED' || isFinished) && (
+              <button onClick={() => navigate('/')} className="flex-1 px-6 py-4 bg-dark-hover hover:bg-dark-border text-white rounded-xl font-semibold transition-colors">
                 Upload New Video
-              </button>
-            )}
-
-            {(status?.state === 'PENDING' || status?.state === 'STARTED' || status?.state === 'PROGRESS') && (
-              <button
-                onClick={handleRetry}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-dark-hover hover:bg-dark-border text-white rounded-xl font-semibold transition-colors"
-              >
-                <RefreshCw className="w-5 h-5" />
-                Refresh Status
               </button>
             )}
           </div>
         </div>
-      </motion.div>
-
-      {/* Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mt-8 text-center text-sm text-gray-500"
-      >
-        {(status?.state === 'PENDING' || status?.state === 'STARTED' || status?.state === 'PROGRESS') && (
-          <p>
-            Status updates automatically every 2.5 seconds
-          </p>
-        )}
       </motion.div>
     </div>
   );

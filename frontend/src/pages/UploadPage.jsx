@@ -36,6 +36,7 @@ export default function UploadPage() {
       });
 
       setTaskId(response.task_id);
+      localStorage.setItem('streamscale_active_task',response.task_id);
       toast.success('Video uploaded successfully!');
       
       // Auto-navigate after a brief delay

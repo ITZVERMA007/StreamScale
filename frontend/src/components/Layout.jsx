@@ -6,6 +6,14 @@ import { cn } from '../utils/helpers';
 export default function Layout({ children }) {
   const location = useLocation();
 
+  const pathParts = location.pathname.split('/');
+  const urlTaskId = (pathParts[1] === 'status' || pathParts[1] === 'results') ? pathParts[2]:null;
+  const savedTaskId = typeof window !== 'undefined' ? localStorage.getItem('streamscale_active_task') : null;
+
+  const activeTaskId = urlTaskId || savedTaskId;
+
+  const statusTarget = activeTaskId ? `/status/${activeTaskId}` : '/status';
+
   return (
     <div className="min-h-screen bg-dark-bg">
       {/* Background effects */}
@@ -38,7 +46,7 @@ export default function Layout({ children }) {
               <NavLink to="/" icon={Upload} active={location.pathname === '/'}>
                 Upload
               </NavLink>
-              <NavLink to="/status" icon={Activity} active={location.pathname.startsWith('/status')}>
+              <NavLink to={statusTarget} icon={Activity} active={location.pathname.startsWith('/status')}>
                 Status
               </NavLink>
             </nav>
@@ -60,11 +68,6 @@ export default function Layout({ children }) {
             <p className="text-sm text-gray-500">
               © 2026 StreamScale.
             </p>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>No Authentication </span>
-              <span>•</span>
-              <span>Anonymous Processing</span>
-            </div>
           </div>
         </div>
       </footer>
