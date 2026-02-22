@@ -70,6 +70,8 @@ def transcode_video(self, job_id: str, file_path: str):
                 "-i", file_path,          
                 "-vf", f"scale={res_scale}",  
                 "-c:a", "copy",           
+                '-preset', 'veryfast', 
+                '-threads', '0',
                 "-progress", "pipe:1",   
                 output_path               
             ]
