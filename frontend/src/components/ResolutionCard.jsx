@@ -1,10 +1,11 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Play, Film ,AlertTriangle} from 'lucide-react';
 import { useState } from 'react';
 import { getDownloadUrl } from '../services/api';
 import { cn } from '../utils/helpers';
 
 export default function ResolutionCard({ 
+  taskId,
   resolution, 
   filename, 
   taskStatus,
@@ -15,9 +16,13 @@ export default function ResolutionCard({
   const isAvailable = taskStatus === 'COMPLETED';
   const isFailed = taskStatus === 'FAILED';
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
+  const videoUrl = `${API_BASE_URL}/download/${taskId}/${resolution}`;
+
   const handleDownload = () => {
     if (filename && isAvailable) {
-      window.open(getDownloadUrl(filename), '_blank');
+      window.location.href = videoUrl;
     }
   };
 
@@ -35,6 +40,7 @@ export default function ResolutionCard({
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
@@ -117,14 +123,21 @@ export default function ResolutionCard({
             </button>
           )}
         </div>
-
-        {showPreview && isAvailable && filename && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-white/10">
-            <video controls className="w-full rounded-lg" src={getDownloadUrl(filename)}>
-              Your browser does not support the video tag.
-            </video>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {showPreview && isAvailable && filename && (
+            <motion.div 
+              key="preview-player" 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              exit={{ opacity: 0, height: 0 }} 
+              className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
+            >
+              <video controls className="w-full rounded-lg" src={videoUrl}>
+                Your browser does not support the video tag.
+              </video>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {isAvailable && (

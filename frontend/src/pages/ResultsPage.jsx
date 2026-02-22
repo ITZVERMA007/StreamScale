@@ -4,7 +4,6 @@ import { ArrowLeft, Sparkles ,AlertTriangle} from 'lucide-react';
 import { useTaskStatus } from '../hooks/useTaskStatus';
 import ResolutionCard from '../components/ResolutionCard';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { RESOLUTIONS } from '../types';
 
 export default function ResultsPage() {
   const { taskId } = useParams();
@@ -35,7 +34,10 @@ export default function ResultsPage() {
             Could not fetch results for this task. Please check the task ID.
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              sessionStorage.removeItem('streamscale_active_task'); 
+              navigate('/');
+            }}
             className="px-6 py-3 bg-accent-primary hover:bg-accent-primary/90 text-white rounded-lg font-medium transition-colors"
           >
             Upload New Video
@@ -70,8 +72,18 @@ export default function ResultsPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <motion.button onClick={() => navigate('/')} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Upload Another Video
+      <motion.button onClick={() => {
+          sessionStorage.removeItem('streamscale_active_task'); 
+          navigate('/')
+        }} 
+        initial={{ opacity: 0, x: -20 }} 
+        animate={{ opacity: 1, x: 0 }} 
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="group inline-flex items-center gap-2 px-5 py-2.5 bg-dark-card/50 hover:bg-white/5 border border-dark-border hover:border-white/10 text-gray-400 hover:text-white rounded-full mb-8 transition-all duration-300 backdrop-blur-sm shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" /> 
+        <span className="font-medium text-sm">Upload Another Video</span>
       </motion.button>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
@@ -97,18 +109,18 @@ export default function ResultsPage() {
         <code className="text-sm font-mono text-accent-primary">{taskId}</code>
       </motion.div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-12">
-  {status?.details &&
+      <div className="grid md:grid-cols-3 gap-6 mb-1 items-start">
+    {status?.details &&
     Object.entries(status.details).map(([resKey, taskDetail], index) => {
       const currentTaskStatus = taskDetail?.status || 'QUEUED';
       const errorMsg = taskDetail?.error || null;
 
-      const filename =
-        currentTaskStatus === 'COMPLETED' ? resKey : null;
+      const filename = currentTaskStatus === 'COMPLETED' ? resKey : null;
 
       return (
         <ResolutionCard
           key={resKey}
+          taskId={taskId}
           resolution={resKey}
           filename={filename}
           taskStatus={currentTaskStatus}

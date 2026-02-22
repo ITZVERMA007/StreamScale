@@ -8,7 +8,7 @@ export default function Layout({ children }) {
 
   const pathParts = location.pathname.split('/');
   const urlTaskId = (pathParts[1] === 'status' || pathParts[1] === 'results') ? pathParts[2]:null;
-  const savedTaskId = typeof window !== 'undefined' ? localStorage.getItem('streamscale_active_task') : null;
+  const savedTaskId = typeof window !== 'undefined' ? sessionStorage.getItem('streamscale_active_task') : null;
 
   const activeTaskId = urlTaskId || savedTaskId;
 

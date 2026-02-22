@@ -36,10 +36,9 @@ export default function UploadPage() {
       });
 
       setTaskId(response.task_id);
-      localStorage.setItem('streamscale_active_task',response.task_id);
+      sessionStorage.setItem('streamscale_active_task',response.task_id);
       toast.success('Video uploaded successfully!');
       
-      // Auto-navigate after a brief delay
       setTimeout(() => {
         navigate(`/status/${response.task_id}`);
       }, 1500);
@@ -52,7 +51,6 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -71,7 +69,6 @@ export default function UploadPage() {
         </p>
       </motion.div>
 
-      {/* Upload Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -83,7 +80,6 @@ export default function UploadPage() {
         />
       </motion.div>
 
-      {/* Upload Progress */}
       {isUploading && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -116,7 +112,6 @@ export default function UploadPage() {
         </motion.div>
       )}
 
-      {/* Upload Button */}
       {selectedFile && !isUploading && !taskId && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -133,7 +128,6 @@ export default function UploadPage() {
         </motion.div>
       )}
 
-      {/* Info Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

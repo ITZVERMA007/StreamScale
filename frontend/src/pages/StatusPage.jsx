@@ -50,7 +50,10 @@ export default function StatusPage() {
             Please provide a valid task ID to check the status.
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              sessionStorage.removeItem('streamscale_active_task'); 
+              navigate('/');
+            }}
             className="px-6 py-3 bg-accent-primary hover:bg-accent-primary/90 text-white rounded-lg font-medium transition-colors"
           >
             Upload New Video
@@ -153,15 +156,14 @@ export default function StatusPage() {
   const isFinished = currentState === "SUCCESS" || currentState === 'COMPLETED'|| currentState === "PARTIAL_SUCCESS";
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
+      
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
         <h1 className="text-4xl font-bold text-white mb-4 font-display">Processing Status</h1>
         <p className="text-gray-400">Track your video transcoding progress in real-time</p>
       </motion.div>
 
-      {/* Status Card */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-dark-card border border-dark-border rounded-2xl overflow-hidden">
-        {/* Task ID Header */}
+        
         <div className="border-b border-dark-border p-6 bg-dark-bg/50 flex justify-between">
           <div>
             <p className="text-sm text-gray-500 mb-1">Task ID</p>
@@ -169,7 +171,6 @@ export default function StatusPage() {
           </div>
         </div>
 
-        {/* Status Content */}
         <div className="p-8">
           <AnimatePresence mode="wait">
             <motion.div key={status?.state} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="text-center mb-8">
@@ -181,14 +182,12 @@ export default function StatusPage() {
             </motion.div>
           </AnimatePresence>
 
-          {/* OVERALL Progress Bar */}
           {status && (status.state === 'PROCESSING' || status.state === 'STARTED') && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
               <ProgressBar progress={status.overall_progress || 0} label="Overall Progress" />
             </motion.div>
           )}
 
-          {/* INDIVIDUAL Task Breakdown */}
           {status?.details && (
             <div className="mb-8 grid gap-4">
               {Object.entries(status.details).map(([res, info]) => (
@@ -213,7 +212,6 @@ export default function StatusPage() {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-3 mt-8">
             {(isFinished || hasCompletedTasks) && (
               <button onClick={handleViewResults} className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-accent-primary to-accent-secondary hover:shadow-lg text-white rounded-xl font-semibold transition-all">
@@ -222,7 +220,13 @@ export default function StatusPage() {
             )}
 
             {(status?.state === 'FAILED' || isFinished) && (
-              <button onClick={() => navigate('/')} className="flex-1 px-6 py-4 bg-dark-hover hover:bg-dark-border text-white rounded-xl font-semibold transition-colors">
+              <button 
+                onClick={() => {
+                  sessionStorage.removeItem('streamscale_active_task');
+                  navigate('/');
+                }} 
+                className="flex-1 px-6 py-4 bg-dark-hover hover:bg-dark-border text-white rounded-xl font-semibold transition-colors"
+              >
                 Upload New Video
               </button>
             )}
