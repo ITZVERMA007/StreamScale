@@ -104,11 +104,6 @@ export default function ResultsPage() {
         </p>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-8 p-4 bg-dark-card border border-dark-border rounded-xl">
-        <p className="text-sm text-gray-500 mb-1">Task ID</p>
-        <code className="text-sm font-mono text-accent-primary">{taskId}</code>
-      </motion.div>
-
       <div className="grid md:grid-cols-3 gap-6 mb-1 items-start">
     {status?.details &&
     Object.entries(status.details).map(([resKey, taskDetail], index) => {
@@ -130,28 +125,6 @@ export default function ResultsPage() {
           );
         })}
       </div>
-
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-dark-card border border-dark-border rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">About Your Videos</h3>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="text-sm font-medium text-gray-400 mb-2">Processing Details</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li>• Transcoded using FFmpeg workers</li>
-              <li>• Processed via distributed Celery tasks</li>
-              <li>• Stored securely</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-400 mb-2">Available Formats</h4>
-            <ul className="space-y-2 text-sm text-gray-500">
-              <li>• 360p - Mobile & low bandwidth</li>
-              <li>• 720p - Standard HD quality</li>
-              <li>• 1080p - Full HD quality</li>
-            </ul>
-          </div>
-        </div>
-      </motion.div>
     </div>
   );
 }

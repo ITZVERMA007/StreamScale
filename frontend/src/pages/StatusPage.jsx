@@ -152,7 +152,6 @@ export default function StatusPage() {
   const config = stateConfig[currentState] || stateConfig.PENDING;
   const Icon = config.icon;
 
-  const hasCompletedTasks = status?.details && Object.values(status.details).some(t => t.status === "COMPLETED");
   const isFinished = currentState === "SUCCESS" || currentState === 'COMPLETED'|| currentState === "PARTIAL_SUCCESS";
   return (
     <div className="max-w-3xl mx-auto">
@@ -163,14 +162,6 @@ export default function StatusPage() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-dark-card border border-dark-border rounded-2xl overflow-hidden">
-        
-        <div className="border-b border-dark-border p-6 bg-dark-bg/50 flex justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Task ID</p>
-            <code className="text-sm font-mono text-accent-primary">{taskId}</code>
-          </div>
-        </div>
-
         <div className="p-8">
           <AnimatePresence mode="wait">
             <motion.div key={status?.state} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="text-center mb-8">
@@ -213,13 +204,13 @@ export default function StatusPage() {
           )}
 
           <div className="flex gap-3 mt-8">
-            {(isFinished || hasCompletedTasks) && (
+            {isFinished && (
               <button onClick={handleViewResults} className="flex-1 group inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-accent-primary to-accent-secondary hover:shadow-lg text-white rounded-xl font-semibold transition-all">
                 View Results <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             )}
 
-            {(status?.state === 'FAILED' || isFinished) && (
+            {/* {(status?.state === 'FAILED' || isFinished) && (
               <button 
                 onClick={() => {
                   sessionStorage.removeItem('streamscale_active_task');
@@ -229,7 +220,7 @@ export default function StatusPage() {
               >
                 Upload New Video
               </button>
-            )}
+            )} */}
           </div>
         </div>
       </motion.div>

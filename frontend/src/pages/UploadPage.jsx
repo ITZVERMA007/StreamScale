@@ -99,15 +99,6 @@ export default function UploadPage() {
               label="Upload Progress"
               className="mb-4"
             />
-
-            {taskId && (
-              <div className="mt-4 p-4 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
-                <p className="text-sm text-gray-400 mb-1">Task ID</p>
-                <code className="text-sm font-mono text-accent-primary break-all">
-                  {taskId}
-                </code>
-              </div>
-            )}
           </div>
         </motion.div>
       )}
