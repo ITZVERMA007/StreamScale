@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Play, Film ,AlertTriangle} from 'lucide-react';
 import { useState } from 'react';
-import { getDownloadUrl } from '../services/api';
 import { cn } from '../utils/helpers';
 
 export default function ResolutionCard({ 
@@ -16,14 +15,44 @@ export default function ResolutionCard({
   const isAvailable = taskStatus === 'COMPLETED';
   const isFailed = taskStatus === 'FAILED';
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  const videoUrl = `/api/v1/download/${taskId}/${resolution}`;
 
-  const videoUrl = `${API_BASE_URL}/download/${taskId}/${resolution}`;
+  const handleDownload = async() => {
+    try {
+    const response = await fetch(videoUrl);
 
-  const handleDownload = () => {
-    if (filename && isAvailable) {
-      window.location.href = videoUrl;
+    if (!response.ok) {
+      alert("File not ready yet. Try again.");
+      return;
     }
+
+    const contentDisposition = response.headers.get("content-disposition");
+
+    let downloadFilename = "video.mp4"; 
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+?)"?$/);
+      if (match && match[1]) {
+        downloadFilename = match[1];
+      }
+    }
+
+    const blob = await response.blob(); //converts the fetch response to a binary data
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = downloadFilename;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert("Something went wrong while downloading.");
+  }
   };
 
   const resolutionColors = {
