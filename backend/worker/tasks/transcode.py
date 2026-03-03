@@ -5,6 +5,7 @@ import logging
 import sys
 from app.core.celery_app import celery_app
 from worker.tasks.ffmpeg import RESOLUTIONS
+from app.services.minio_client import minio_client,BUCKET_NAME
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -13,8 +14,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-OUTPUT_DIR = "/data/processed"
-
+TEMP_DIR = "/tmp"
 # This function helps to get the duration of the video to help in getting the progress
 def get_video_duration(file_path: str):
     
@@ -35,18 +35,26 @@ def get_video_duration(file_path: str):
 
 #This is the function which is involved in the conversion of the video
 @celery_app.task(bind=True)
-def transcode_video(self, job_id: str, file_path: str):
+def transcode_video(self, job_id: str, object_name: str):
 
     try:
-        logger.info(f"Received Job {job_id}: Processing {file_path}")
+        logger.info(f"Received Job {job_id}: Processing {object_name}")
 
-        if not os.path.exists(file_path):
-            error_msg = f"Input file not found: {file_path}"
+        _, ext = os.path.splitext(object_name)
+        local_input_path = os.path.join(TEMP_DIR, f"{job_id}_input{ext}")
+        try:
+            minio_client.fget_object(
+                BUCKET_NAME,
+                object_name,
+                local_input_path
+            )
+        except Exception as e:
+            error_msg = f"Failed to download object {object_name} from MinIO:{str(e)}"
             logger.error(error_msg)
-            self.update_state(state='FAILURE', meta={'error': error_msg})
-            raise FileNotFoundError(error_msg)
+            self.update_state(state="FAILURE",meta={"error":error_msg})
+            raise e
 
-        total_duration = get_video_duration(file_path)
+        total_duration = get_video_duration(local_input_path)
         if total_duration == 0:
             logger.warning("Could not determine the video duration. Progress bar might be inaccurate.")
             total_duration = 1 
@@ -55,19 +63,17 @@ def transcode_video(self, job_id: str, file_path: str):
                             for res in RESOLUTIONS.keys()
                             }
         self.update_state(state="PROGRESS",meta={"tasks":progress_tracker})
-
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
         
         for res_name,res_scale in RESOLUTIONS.items():
 
             output_filename = f"{job_id}_{res_name}.mp4"
-            output_path = os.path.join(OUTPUT_DIR, output_filename)
+            output_path = os.path.join(TEMP_DIR, output_filename)
 
             
             cmd = [
                 "ffmpeg", 
                 "-y",                 
-                "-i", file_path,          
+                "-i", local_input_path,          
                 "-vf", f"scale={res_scale}",
                 "-c:v","libx264",
                 "-c:a", "copy",           
@@ -113,6 +119,14 @@ def transcode_video(self, job_id: str, file_path: str):
                 
                 progress_tracker[res_name]["status"] = "COMPLETED"
                 progress_tracker[res_name]["progress"] = 100
+                minio_client.fput_object(
+                    BUCKET_NAME,
+                    f"output/{output_filename}",
+                    output_path
+                )
+                logger.info(f"Uploaded {output_filename} to MinIO")
+                if os.path.exists(output_path):
+                    os.remove(output_path)
 
             except Exception as e:
                 logger.error(f"Failed processing {res_name}:{e}")
@@ -121,6 +135,12 @@ def transcode_video(self, job_id: str, file_path: str):
             
             self.update_state(state="PROGRESS",meta={"tasks":progress_tracker})
         failed_tasks = [res for res,data in progress_tracker.items() if data["status"] == "FAILED"]
+
+        try:
+            if os.path.exists(local_input_path):
+                os.remove(local_input_path)
+        except:
+            pass
 
         if len(failed_tasks) == len(RESOLUTIONS):
             logger.error(f"Job {job_id} completely failed.")

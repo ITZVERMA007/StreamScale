@@ -1,12 +1,14 @@
-jobs = {}
+from services.minio_client import minio_client, BUCKET_NAME
+from fastapi import UploadFile
 
-def create_job(task_id:str,filename:str):
-    jobs[task_id] = {
-        "filename":filename,
-        "task_id":task_id,  
-        "status":"Uploaded",
-        "progress":0
-    }
+def upload_to_minio(task_id:str,file:UploadFile):
+    object_name = f"input/{task_id}_{file.filename}"
+    minio_client.put_object(
+        BUCKET_NAME,
+        object_name,
+        file.file,
+        length=-1,
+        part_size=10*1024*1024
+    )
 
-def get_job(task_id:str):
-    return jobs.get(task_id)
+    return object_name

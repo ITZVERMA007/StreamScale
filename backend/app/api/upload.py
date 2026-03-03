@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from app.core.job_store import create_job
+from app.core.job_store import upload_to_minio
 from app.services.queue_service import enqueue_transcode_task
 import uuid
 import os
@@ -7,7 +7,6 @@ import os
 
 router = APIRouter()
 
-upload_dir = "/data/uploads"
 allowed_extensions = {".mp4",".mkv",".mov"}
 
 @router.post("/upload")
@@ -22,19 +21,12 @@ async def upload_file(file:UploadFile = File(...)):
     
     # task id for the transcoding task is being generated over here
     task_id = str(uuid.uuid4())
-
-    #saving the file locally 
-    os.makedirs(upload_dir,exist_ok=True)
-    file_location = os.path.join(upload_dir,f"{task_id}_{file.filename}")
-
-    with open(file_location,"wb") as f:
-        f.write(await file.read())
-
-    #creatig a job entry in the job_store
-    create_job(task_id,file.filename)   
+   
+    #uploadin the file to minio
+    object_name = upload_to_minio(task_id,file)   
 
     #enqueueing the transcoding task to the worker
-    enqueue_transcode_task(task_id,file_location)
+    enqueue_transcode_task(task_id,object_name)
 
     # returning the task id to the user
     return{

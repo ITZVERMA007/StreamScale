@@ -4,3 +4,4 @@ celery[redis]
 redis
 ffmpeg-python
 gunicorn
+minio
