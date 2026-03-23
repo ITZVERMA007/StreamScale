@@ -5,7 +5,7 @@ import os
 # connection with the postgres container in docker
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://streamuser:streampassword123@postrges:5432/streamscale_db"
+    "postgresql://streamuser:streampassword123@postgres:5432/streamscale_db"
 )
 
 # actual connection is made here

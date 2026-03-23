@@ -12,7 +12,7 @@ class JobStore:
             original_filename = original_filename,
             input_object_name = input_object_name,
             status = "PENDING",
-            resolution = resolutions or []
+            resolutions = resolutions or []
         )
         db.add(db_job)
         db.commit()
