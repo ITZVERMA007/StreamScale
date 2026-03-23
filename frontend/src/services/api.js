@@ -33,22 +33,27 @@ api.interceptors.response.use(
 );
 
 export const uploadVideo = async (file, onProgress) => {
-  const formData = new FormData();
-  formData.append('file', file);
 
-  const response = await api.post('/upload', formData, {
+  const initResponse = await api.post('/upload',{
+    filename: file.name
+  })
+  const {task_id,upload_url} = initResponse.data;
+
+  await axios.put(upload_url,file,{
     headers:{
-      'Content-Type':'multipart/form-data',
+      'Content-Type':file.type || 'application/octet-stream',
     },
-    onUploadProgress: (progressEvent) => {
-      if (progressEvent.total && onProgress) {
+    onUploadProgress:(progressEvent) => {
+      if (progressEvent.total && onProgress){
         const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         onProgress(progress);
       }
     },
-  });
+  })
 
-  return response.data;
+  await api.post(`/process/${task_id}`);
+  
+  return {task_id};
 };
 
 export const getTaskStatus = async (taskId) => {
@@ -60,8 +65,8 @@ export const cancelTask = async (taskId) => {
   await api.post(`/tasks/${taskId}/cancel`);
 };
 
-export const getDownloadUrl = async (taskId) => {
-  const response = await api.get(`/tasks/${taskId}/download`);
+export const getDownloadUrl = async (taskId,resolution) => {
+  const response = await api.get(`/download/${taskId}/${resolution}`);
   return response.data;
 };
 export default api;
