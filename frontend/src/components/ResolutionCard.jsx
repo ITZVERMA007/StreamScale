@@ -1,6 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Play, Film ,AlertTriangle} from 'lucide-react';
-import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Download, Film, AlertTriangle } from 'lucide-react';
 import { cn } from '../utils/helpers';
 
 export default function ResolutionCard({ 
@@ -11,7 +10,6 @@ export default function ResolutionCard({
   errorMsg,
   index 
 }) {
-  const [showPreview, setShowPreview] = useState(false);
   const isAvailable = taskStatus === 'COMPLETED';
   const isFailed = taskStatus === 'FAILED';
 
@@ -142,9 +140,6 @@ export default function ResolutionCard({
               <button onClick={handleDownload} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/15 text-white rounded-lg font-medium transition-all">
                 <Download className="w-4 h-4" /> Download
               </button>
-              <button onClick={() => setShowPreview(!showPreview)} className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all" title="Preview">
-                <Play className="w-4 h-4" />
-              </button>
             </>
           ) : (
             <button disabled className="flex-1 px-4 py-3 bg-gray-800/30 text-gray-600 rounded-lg font-medium cursor-not-allowed">
@@ -152,21 +147,6 @@ export default function ResolutionCard({
             </button>
           )}
         </div>
-        <AnimatePresence>
-          {showPreview && isAvailable && filename && (
-            <motion.div 
-              key="preview-player" 
-              initial={{ opacity: 0, height: 0 }} 
-              animate={{ opacity: 1, height: 'auto' }} 
-              exit={{ opacity: 0, height: 0 }} 
-              className="mt-4 pt-4 border-t border-white/10 overflow-hidden"
-            >
-              <video controls className="w-full rounded-lg" src={videoUrl}>
-                Your browser does not support the video tag.
-              </video>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {isAvailable && (

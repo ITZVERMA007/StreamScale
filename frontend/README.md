@@ -19,7 +19,7 @@ A production-quality React frontend for the StreamScale distributed video transc
 
 - Node.js 18+ 
 - npm or yarn
-- StreamScale backend running (FastAPI + Celery + Redis + MinIO)
+- StreamScale backend running (FastAPI + Celery + Redis + AWS S3)
 
 ## 🛠️ Installation
 
@@ -196,7 +196,7 @@ Modify constraints in `src/types/index.js`:
 ```javascript
 export const ALLOWED_FILE_TYPES = ['video/mp4', 'video/x-matroska', 'video/quicktime', 'video/webm'];
 export const ALLOWED_EXTENSIONS = ['.mp4', '.mkv', '.mov', '.webm'];
-export const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
+export const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 ```
 
 ## 🧪 Error Handling
@@ -276,7 +276,7 @@ app.add_middleware(
 
 ### Upload Fails
 
-- Check file size limits (default 2GB)
+- Check file size limits (default 2MB)
 - Verify file type is supported
 - Check backend logs for errors
 - Ensure sufficient disk space

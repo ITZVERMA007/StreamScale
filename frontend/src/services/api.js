@@ -9,8 +9,12 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    if (!config.data instanceof FormData){
-    config.headers["Content-Type"] = "application/json";
+    // Axios automatically sets 'application/json' for JS objects.
+    // If we specifically need to avoid overriding FormData or File:
+    if (config.data && !(config.data instanceof FormData) && !(typeof File !== 'undefined' && config.data instanceof File)) {
+      if (!config.headers["Content-Type"]) {
+        config.headers["Content-Type"] = "application/json";
+      }
     }
     return config;
   },
@@ -20,31 +24,46 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    let errorMessage = 'An unexpected error occurred.';
     if (error.response) {
-      console.error("API Error:", {
-        status: error.response.status,
-        data: error.response.data,
-      });
-    } else {
-      console.error("Network Error:", error.response?.data?.detail);
+      // Server responded with error status
+      const { status, data } = error.response;
+      errorMessage = data?.detail || data?.message || `Server error: ${status}`;
+
+      // Handling specific status codes
+      if (status === 429) {
+        errorMessage = 'Rate limit exceeded. Please wait a moment.';
+      } else if (status === 413) {
+        errorMessage = 'File too large. Maximum size is 2MB.';
+      } else if (status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+    } else if (error.request) {
+      // Request made but no response
+      errorMessage = 'Network error. Please check your connection.';
     }
+
+    console.error("API Error:", error);
+
+    error.userMessage = errorMessage;
     return Promise.reject(error);
   }
 );
 
 export const uploadVideo = async (file, onProgress) => {
 
-  const initResponse = await api.post('/upload',{
-    filename: file.name
+  const initResponse = await api.post('/upload', {
+    filename: file.name,
+    filesize: file.size
   })
-  const {task_id,upload_url} = initResponse.data;
+  const { task_id, upload_url } = initResponse.data;
 
-  await axios.put(upload_url,file,{
-    headers:{
-      'Content-Type':file.type || 'application/octet-stream',
+  await axios.put(upload_url, file, {
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
     },
-    onUploadProgress:(progressEvent) => {
-      if (progressEvent.total && onProgress){
+    onUploadProgress: (progressEvent) => {
+      if (progressEvent.total && onProgress) {
         const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         onProgress(progress);
       }
@@ -52,8 +71,8 @@ export const uploadVideo = async (file, onProgress) => {
   })
 
   await api.post(`/process/${task_id}`);
-  
-  return {task_id};
+
+  return { task_id };
 };
 
 export const getTaskStatus = async (taskId) => {
@@ -65,7 +84,7 @@ export const cancelTask = async (taskId) => {
   await api.post(`/tasks/${taskId}/cancel`);
 };
 
-export const getDownloadUrl = async (taskId,resolution) => {
+export const getDownloadUrl = async (taskId, resolution) => {
   const response = await api.get(`/download/${taskId}/${resolution}`);
   return response.data;
 };
