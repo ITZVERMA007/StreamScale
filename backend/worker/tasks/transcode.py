@@ -3,9 +3,10 @@ import subprocess
 import re
 import logging
 import sys
+import time
 from app.core.celery_app import celery_app
 from worker.tasks.ffmpeg import RESOLUTIONS
-from app.services.minio_client import minio_client,BUCKET_NAME
+from app.services.s3_client import s3_client, BUCKET_NAME
 from contextlib import closing
 from app.db.database import sessionLocal
 from app.core.job_store import job_store
@@ -39,7 +40,14 @@ def get_video_duration(file_path: str):
 
 
 #This is the function which is involved in the conversion of the video
-@celery_app.task(bind=True)
+@celery_app.task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,      # Wait 60s before first retry
+    retry_backoff_max=600,       # Max 10 minutes between retries
+    task_time_limit=30 * 60,     # 30 minute timeout per task
+    soft_time_limit=25 * 60      # Timeout for cleanup
+    )
 def transcode_video(self, job_id: str, object_name: str):
 
     with closing(sessionLocal()) as db:
@@ -51,7 +59,7 @@ def transcode_video(self, job_id: str, object_name: str):
             _, ext = os.path.splitext(object_name)
             local_input_path = os.path.join(TEMP_DIR, f"{job_id}_input{ext}")
             try:
-                minio_client.fget_object(
+                s3_client.download_file(
                     BUCKET_NAME,
                     object_name,
                     local_input_path
@@ -59,11 +67,7 @@ def transcode_video(self, job_id: str, object_name: str):
             except Exception as e:
                 error_msg = f"Failed to download object {object_name} from MinIO:{str(e)}"
                 logger.error(error_msg)
-                self.update_state(state="FAILURE",meta={"error":error_msg})
-
-                # Failure update in the database
-                job_store.update_job_status(db,job_id,status="FAILED",is_completed=True)
-                raise e
+                raise self.retry(exc=e, countdown=60)
 
             total_duration = get_video_duration(local_input_path)
             if total_duration == 0:
@@ -103,8 +107,10 @@ def transcode_video(self, job_id: str, object_name: str):
                         stderr=subprocess.STDOUT, 
                         universal_newlines=True   
                     )
-
+                    last_update_time = time.time()
                     last_percent = -1
+                    min_update_interval = 2.0
+
                     # Progress calculation
                     for line in process.stdout:
                         match = re.search(r"out_time_ms=(\d+)", line)
@@ -115,13 +121,16 @@ def transcode_video(self, job_id: str, object_name: str):
                             percent = int((current_seconds / total_duration) * 100)
                             percent = max(0, min(100, percent))
 
-                            if percent!=last_percent:
+                            current_time = time.time()
+                            if (percent!=last_percent and percent % 5 == 0) or \
+                                (current_time - last_update_time >= min_update_interval):
                                 progress_tracker[res_name]["progress"] = percent
                                 self.update_state(
                                     state='PROGRESS',
-                                meta={"tasks":progress_tracker}
+                                    meta={"tasks":progress_tracker}
                                 )
                                 last_percent = percent
+                                last_update_time = current_time
 
                     process.wait()
 
@@ -131,13 +140,13 @@ def transcode_video(self, job_id: str, object_name: str):
                     progress_tracker[res_name]["status"] = "COMPLETED"
                     progress_tracker[res_name]["progress"] = 100
 
-                    # Uploading finished file to minio
-                    minio_client.fput_object(
+                    # Uploading finished file to S3
+                    s3_client.upload_file(
+                        output_path,
                         BUCKET_NAME,
-                        f"output/{output_filename}",
-                        output_path
+                        f"output/{output_filename}"
                     )
-                    logger.info(f"Uploaded {output_filename} to minio")
+                    logger.info(f"Uploaded {output_filename} to S3")
                     if os.path.exists(output_path):
                         os.remove(output_path)
 

@@ -1,11 +1,12 @@
-from fastapi import APIRouter,HTTPException,Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
 from celery.result import AsyncResult
 from app.core.celery_app import celery_app
-from app.services.minio_client import minio_client,BUCKET_NAME
+from app.services.s3_service import generate_presigned_download_url
 from datetime import timedelta
 from app.db.database import get_db
 from app.core.job_store import job_store
+from app.core.limiter import limiter
 import logging
 
 router = APIRouter()
@@ -13,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 # Endpoint to check the status of the desired task with the help of task id which is being generated at the time of file upload
 @router.get("/tasks/{task_id}/status")
-def get_status(task_id:str,db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def get_status(request: Request, task_id: str, db: Session = Depends(get_db)):
 
     try:
         job = job_store.get_job(db,task_id)
@@ -38,16 +40,18 @@ def get_status(task_id:str,db: Session = Depends(get_db)):
                 "filename":job.original_filename
             }
 
-        elif job.status == "SUCCESS":
+        elif result.state == "SUCCESS":
             downloads = {}
+            details = {}
             for res in job.resolutions:
                 object_name = f"output/{task_id}_{res}.mp4"
+                details[res] = {"status": "COMPLETED"}
                 try:
-                    # presigned URL is used to create a temporary URL for the output file stored in minio to download the file
-                    presigned_url = minio_client.presigned_get_object(
-                        BUCKET_NAME,
-                        object_name,
-                        expires=timedelta(hours=1)
+                    # presigned URL is used to create a temporary URL for the output file stored in S3 to download the file
+                    presigned_url = generate_presigned_download_url(
+                        object_name=object_name,
+                        filename=f"{job.original_filename}_{res}.mp4",
+                        expiration=3600
                         )
                     downloads[res] = presigned_url
                 except Exception as e:
@@ -58,9 +62,10 @@ def get_status(task_id:str,db: Session = Depends(get_db)):
                 "state":"COMPLETED",
                 "overall_progress":100,
                 "download_urls":downloads,
+                "details": details,
                 "filename":job.original_filename
             }
-        elif job.status == "FAILURE":
+        elif result.state == "FAILURE":
             return {
                 "task_id":task_id,
                 "state":"Failed",

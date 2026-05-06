@@ -4,6 +4,6 @@ celery[redis]
 redis
 ffmpeg-python
 gunicorn
-minio
 sqlalchemy
 psycopg2-binary
+slowapi
