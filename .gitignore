@@ -43,11 +43,5 @@ uploads/
 *.sln
 *.sw?
 
-docker-compose.override.yml  # ← local overrides shouldn't be committed
+docker-compose.override.yml 
 
-CHANGELOG.md
-OPTIMIZATION_GUIDE.md
-BACKEND_DEEP_DIVE.md
-INTERVIEW_PREP.md
-DEPLOYMENT.md
-README.md
