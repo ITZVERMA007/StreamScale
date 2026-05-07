@@ -86,16 +86,17 @@ def transcode_video(self, job_id: str, object_name: str):
 
                 
                 cmd = [
-                    "ffmpeg", 
-                    "-y",                 
-                    "-i", local_input_path,          
+                    "ffmpeg",
+                    "-y",
+                    "-i", local_input_path,
                     "-vf", f"scale={res_scale}",
-                    "-c:v","libx264",
-                    "-c:a", "copy",           
-                    '-preset', 'veryfast', 
-                    '-threads', '0',
-                    "-progress", "pipe:1",   
-                    output_path               
+                    "-c:v", "libx264",
+                    "-c:a", "copy",
+                    "-preset", "veryfast",
+                    "-threads", "2",              # Limit threads to prevent OOM
+                    "-max_muxing_queue_size", "1024",  # Prevent buffering overflow
+                    "-progress", "pipe:1",
+                    output_path
                 ]
 
                 logger.info(f"Running FFmpeg command for {res_name}: {' '.join(cmd)}")
