@@ -3,7 +3,7 @@
         {
             "AllowedOrigins": [
                 "http://localhost:3000",
-                "https://stream-scale-bay.vercel.app"
+                "https://stream-scale-ecru.vercel.app"
             ],
             "AllowedMethods": [
                 "GET",
