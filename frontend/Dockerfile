@@ -8,14 +8,20 @@ RUN npm ci
 
 COPY . .
 
+# Build with production environment
+ENV NODE_ENV=production
 RUN npm run build
 
-FROM nginx:alpine
+# Serve with a lightweight static server (optional)
+FROM node:18-alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install serve for static hosting
+RUN npm install -g serve
 
-EXPOSE 80
+COPY --from=builder /app/dist ./dist
 
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 3000
+
+CMD ["serve", "-s", "dist", "-l", "3000"]

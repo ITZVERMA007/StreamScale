@@ -2,23 +2,19 @@
     "CORSRules": [
         {
             "AllowedOrigins": [
-                "*"
+                "http://localhost:3000",
+                "https://your-vercel-app.vercel.app"
             ],
             "AllowedMethods": [
                 "GET",
                 "PUT",
-                "POST",
-                "DELETE",
                 "HEAD"
             ],
             "AllowedHeaders": [
                 "*"
             ],
             "ExposeHeaders": [
-                "ETag",
-                "x-amz-server-side-encryption",
-                "x-amz-request-id",
-                "x-amz-id-2"
+                "ETag"
             ],
             "MaxAgeSeconds": 3000
         }

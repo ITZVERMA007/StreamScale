@@ -1,11 +1,15 @@
 import os
 from celery import Celery
 
-# Celery configuration
-redis_host = os.getenv("REDIS_HOST","localhost")
-redis_port = os.getenv("REDIS_PORT","6379")
+# Celery configuration - uses REDIS_URL from environment (Railway/Redis Cloud)
+# Falls back to localhost for local development
+REDIS_URL = os.getenv("REDIS_URL") or os.getenv("CELERY_BROKER_URL")
 
-REDIS_URL = f"redis://{redis_host}:{redis_port}/0"
+if not REDIS_URL:
+    # Local development fallback
+    redis_host = os.getenv("REDIS_HOST", "localhost")
+    redis_port = os.getenv("REDIS_PORT", "6379")
+    REDIS_URL = f"redis://{redis_host}:{redis_port}/0"
 
 #Instantiate Celery 
 celery_app = Celery(

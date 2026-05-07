@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Endpoint to check the status of the desired task with the help of task id which is being generated at the time of file upload
 @router.get("/tasks/{task_id}/status")
 @limiter.limit("60/minute")
-def get_status(request: Request, task_id: str, db: Session = Depends(get_db)):
+async def get_status(request: Request, task_id: str, db: Session = Depends(get_db)):
 
     try:
         job = job_store.get_job(db,task_id)

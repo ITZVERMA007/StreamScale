@@ -65,7 +65,7 @@ def transcode_video(self, job_id: str, object_name: str):
                     local_input_path
                 )
             except Exception as e:
-                error_msg = f"Failed to download object {object_name} from MinIO:{str(e)}"
+                error_msg = f"Failed to download object {object_name} from S3: {str(e)}"
                 logger.error(error_msg)
                 raise self.retry(exc=e, countdown=60)
 

@@ -1,9 +1,22 @@
+# Core FastAPI and server
 fastapi[standard]
 uvicorn[standard]
+gunicorn
+
+# Celery task queue
 celery[redis]
 redis
-ffmpeg-python
-gunicorn
+
+# AWS S3 for object storage
+boto3
+botocore
+
+# Database (psycopg2-binary for PostgreSQL/Neon compatibility)
 sqlalchemy
 psycopg2-binary
+
+# Video processing
+ffmpeg-python
+
+# Rate limiting
 slowapi

@@ -19,6 +19,7 @@ frontend/.env
 frontend/.env.*
 backend/.env
 backend/.env.*
+!.env.example
 
 venv/
 env/
@@ -45,3 +46,10 @@ uploads/
 
 docker-compose.override.yml 
 
+CHANGELOG.md
+OPTIMIZATION_GUIDE.md
+BACKEND_DEEP_DIVE.md
+INTERVIEW_PREP.md
+DEPLOYMENT.md
+README.md
+DEPLOY.md
