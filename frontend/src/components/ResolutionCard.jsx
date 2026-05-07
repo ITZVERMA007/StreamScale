@@ -13,7 +13,8 @@ export default function ResolutionCard({
   const isAvailable = taskStatus === 'COMPLETED';
   const isFailed = taskStatus === 'FAILED';
 
-  const videoUrl = `/api/v1/download/${taskId}/${resolution}`;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+  const videoUrl = `${API_BASE_URL}/api/v1/download/${taskId}/${resolution}`;
 
   const handleDownload = async() => {
     try {
