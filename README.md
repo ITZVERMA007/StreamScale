@@ -229,7 +229,6 @@ Possible future enhancements:
 * User authentication
 * Video thumbnails and previews
 * Distributed worker scaling
-* Rate limiting
 * Monitoring and observability
 * Kubernetes deployment
 * WebSocket-based live progress updates
