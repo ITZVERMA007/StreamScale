@@ -5,6 +5,7 @@ from app.core.job_store import job_store
 from app.services.s3_client import s3_client, BUCKET_NAME
 from worker.tasks.ffmpeg import RESOLUTIONS
 import logging
+import os
 from fastapi.responses import RedirectResponse
 from app.services.s3_service import generate_presigned_download_url
 
@@ -31,10 +32,14 @@ async def download_video(job_id:str,res_key:str,db:Session = Depends(get_db)):
             logger.error(f"{object_name} not found.. {e}")
             raise HTTPException(status_code=404, detail="File processing or missing")
         
+        # Create resolution-specific filename for download
+        base_name = os.path.splitext(job.original_filename)[0]
+        download_filename = f"{base_name}_{res_key}.mp4"
+        
         # Temporary download URL signed for the external environment
         download_url = generate_presigned_download_url(
             object_name=object_name,
-            filename=job.original_filename,
+            filename=download_filename,
             expiration=3600
         )
 
