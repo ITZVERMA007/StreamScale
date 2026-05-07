@@ -11,15 +11,30 @@ if not REDIS_URL:
     redis_port = os.getenv("REDIS_PORT", "6379")
     REDIS_URL = f"redis://{redis_host}:{redis_port}/0"
 
-#Instantiate Celery 
+# Instantiate Celery 
 celery_app = Celery(
     "streamscale_worker",
     broker = REDIS_URL,
     backend = REDIS_URL,
-    include=["worker.tasks.transcode",
-             ]
-)   
+    include=[
+        "worker.tasks.transcode",
+        "worker.tasks.cleanup",
+    ]
+)
 
+# Celery Beat Schedule - Periodic cleanup tasks
+celery_app.conf.beat_schedule = {
+    # Run database cleanup once per day at 2 AM UTC
+    "cleanup-old-jobs-daily": {
+        "task": "worker.tasks.cleanup.cleanup_old_jobs",
+        "schedule": 86400.0,  # 24 hours in seconds
+    },
+    # Run temp file cleanup once per day at 3 AM UTC
+    "cleanup-temp-files-daily": {
+        "task": "worker.tasks.cleanup.cleanup_orphaned_temp_files",
+        "schedule": 86400.0,  # 24 hours in seconds
+    },
+}
 
 celery_app.conf.update(
     task_serializer = "json",

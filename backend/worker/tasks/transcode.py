@@ -49,12 +49,13 @@ def get_video_duration(file_path: str):
     soft_time_limit=25 * 60      # Timeout for cleanup
     )
 def transcode_video(self, job_id: str, object_name: str):
+    local_input_path = None
 
     with closing(sessionLocal()) as db:
         try:
             logger.info(f"Received Job {job_id}: Processing {object_name}")
 
-            job_store.update_job_status(db,job_id,status="PROCESSING")
+            job_store.update_job_status(db, job_id, status="PROCESSING")
 
             _, ext = os.path.splitext(object_name)
             local_input_path = os.path.join(TEMP_DIR, f"{job_id}_input{ext}")
@@ -148,22 +149,23 @@ def transcode_video(self, job_id: str, object_name: str):
                         f"output/{output_filename}"
                     )
                     logger.info(f"Uploaded {output_filename} to S3")
-                    if os.path.exists(output_path):
-                        os.remove(output_path)
 
                 except Exception as e:
                     logger.error(f"Failed processing {res_name}:{e}")
                     progress_tracker[res_name]["status"] = "FAILED"
                     progress_tracker[res_name]["error"] = str(e)
-                
-                self.update_state(state="PROGRESS",meta={"tasks":progress_tracker})
-            failed_tasks = [res for res,data in progress_tracker.items() if data["status"] == "FAILED"]
 
-            try:
-                if os.path.exists(local_input_path):
-                    os.remove(local_input_path)
-            except:
-                pass
+                finally:
+                    # Always clean up output temp file, even on failure
+                    try:
+                        if os.path.exists(output_path):
+                            os.remove(output_path)
+                            logger.info(f"Cleaned up temp file: {output_filename}")
+                    except OSError as cleanup_error:
+                        logger.warning(f"Could not clean up temp file {output_filename}: {cleanup_error}")
+
+                    self.update_state(state="PROGRESS",meta={"tasks":progress_tracker})
+            failed_tasks = [res for res,data in progress_tracker.items() if data["status"] == "FAILED"]
 
             if len(failed_tasks) == len(RESOLUTIONS):
                 logger.error(f"Job {job_id} completely failed.")
@@ -194,3 +196,13 @@ def transcode_video(self, job_id: str, object_name: str):
             logger.error(f"Unexpected error in task: {str(e)}")
             job_store.update_job_status(db,job_id,status="FAILED",is_completed=True)
             raise e
+
+        finally:
+            # Always clean up the input file, regardless of success or failure
+            if local_input_path:
+                try:
+                    if os.path.exists(local_input_path):
+                        os.remove(local_input_path)
+                        logger.info(f"Cleaned up input file: {os.path.basename(local_input_path)}")
+                except OSError as e:
+                    logger.warning(f"Could not clean up input file {local_input_path}: {e}")
