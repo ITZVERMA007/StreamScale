@@ -16,42 +16,16 @@ export default function ResolutionCard({
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
   const videoUrl = `${API_BASE_URL}/api/v1/download/${taskId}/${resolution}`;
 
-  const handleDownload = async() => {
-    try {
-    const response = await fetch(videoUrl);
-
-    if (!response.ok) {
-      alert("File not ready yet. Try again.");
-      return;
-    }
-
-    const contentDisposition = response.headers.get("content-disposition");
-
-    let downloadFilename = "video.mp4"; 
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="?(.+?)"?$/);
-      if (match && match[1]) {
-        downloadFilename = match[1];
-      }
-    }
-
-    const blob = await response.blob(); //converts the fetch response to a binary data
-    const url = window.URL.createObjectURL(blob);
-
+  const handleDownload = () => {
+    // Use direct browser navigation to handle the 302 redirect to S3
+    // This bypasses CORS issues since the browser naturally follows redirects
     const link = document.createElement("a");
-    link.href = url;
-    link.download = downloadFilename;
+    link.href = videoUrl;
+    link.target = "_blank"; // Open in new tab/window to handle redirect
 
     document.body.appendChild(link);
     link.click();
-
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-
-  } catch (error) {
-    console.error("Download failed:", error);
-    alert("Something went wrong while downloading.");
-  }
   };
 
   const resolutionColors = {
